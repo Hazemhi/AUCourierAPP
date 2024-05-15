@@ -5,6 +5,7 @@ import { View, Text, Image, TextInput, Button, StyleSheet, ImageBackground, Safe
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Linking } from 'react-native';
 import { NativeModules } from 'react-native';
 import { WelcomePage } from './screens/Welcome';
@@ -77,14 +78,22 @@ export default function App() {
 
 
           <Stack.Screen name="Emergency1Screen" component={Emergency1Screen} />
-          <Stack.Screen name="Emergency2Screen" component={Emergency2Screen} />
+          <Stack.Screen name="ReceiveOrderScreen" component={ReceiveOrderScreen} />
 
           <Stack.Screen name="ProfilePage" component={ProfilePage} />
           <Stack.Screen name="CourierProfile" component={CourierProfile} />
+
           <Stack.Screen name="CourierPage" component={CourierPage} />
+          <Stack.Screen name="Courierpage" component={Courierpage} />
+
           <Stack.Screen name="ApplicationForCourier" component={ApplicationForCourier} />
 
           <Stack.Screen name="OrderPage" component={OrderPage} />
+
+          <Stack.Screen name="PaymentPage" component={PaymentPage} />
+
+          <Stack.Screen name="FinishPage" component={FinishPage} />
+
 
         </Stack.Navigator>
       </NavigationContainer>
@@ -186,7 +195,7 @@ const Login = ({ navigation }) => {
       />
       <Button title="Login" 
       color={'#003566'}
-      onPress={() => { navigation.navigate('HomePage') }} />
+      onPress={handleLogin1} />
     </View>
   );
 };
@@ -199,7 +208,7 @@ const HomePage = ({ navigation }) => {
     { name: 'Stationary & Books', image: require('./assets/library.png'), targetScreen: 'SearchPageBooks' },
     { name: 'Custom Order', image: require('./assets/customization.png'), targetScreen: 'CustomScreen' },
     { name: 'Emergency', image: require('./assets/emergency.png'), targetScreen: 'SearchPageEmergency' },
-    { name: 'Receive Order', image: require('./assets/Order.png'), targetScreen: 'Emergency2Screen' },
+    { name: 'Receive Order', image: require('./assets/Order.png'), targetScreen: 'ReceiveOrderScreen' },
   ];
   return (
     <View style={style4.container}>
@@ -242,30 +251,34 @@ const HomePage = ({ navigation }) => {
   );
 };
 /*................................................................................................*/
-const OrderPage = ({ navigation }) => {
+const OrderPage = ({ navigation, route }) => {
+  const { selectedCategory, message } = route.params || {};
+  const handleConfirm = () => {
+    const order = message || '';
+    navigation.navigate('CourierPage', { selectedCategory, order });
+  };
   return (
     <View style={style4.container}>
-      {/* Food Categories (Replace with your layout) */}
-      <View style={style6.tabBarContainer}>
-        <TouchableOpacity 
-        style={style6.tabBarButton}
-        onPress={() => navigation.navigate('HomePage')}>
-          <Text style={[style6.tabBarButtonText, { color: '#FFFFFF' }]}>Home</Text>
-        </TouchableOpacity>
-        { <TouchableOpacity 
-        style={style6.tabBarButton}
-        onPress={() => navigation.navigate('SearchPage')}>
-          <Text style={[style6.tabBarButtonText, { color: '#25DEF7' }]}>Search</Text>
-        </TouchableOpacity>}
-        <TouchableOpacity 
-        style={style6.tabBarButton}
-        onPress={() => navigation.navigate('ProfilePage')}>
-          <Text style={[style6.tabBarButtonText, { color: '#FFFFFF' }]}>Profile</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    <Text style={style11.orderText}>Selected Category: {selectedCategory}</Text>
+    <Text style={style11.messageText}>Message: {message}</Text>
+    <TouchableOpacity style={style11.confirmButton} onPress={handleConfirm}>  
+      <Text style={style11.confirmButtonText}>Confirm</Text>
+    </TouchableOpacity>
+  {/* ... your existing bottom tab buttons */}
+  <View style={style6.tabBarContainer}>
+  <TouchableOpacity style={style6.tabBarButton} onPress={() => navigation.navigate('HomePage')}>
+  <Text style={[style6.tabBarButtonText, { color: '#25DEF7' }]}>Home</Text>
+  </TouchableOpacity>
+  <TouchableOpacity style={style6.tabBarButton} onPress={() => navigation.navigate('SearchPage')}>
+  <Text style={[style6.tabBarButtonText, { color: '#FFFFFF' }]}>Search</Text>
+  </TouchableOpacity>
+  <TouchableOpacity style={style6.tabBarButton} onPress={() => navigation.navigate('ProfilePage')}>
+  <Text style={[style6.tabBarButtonText, { color: '#FFFFFF' }]}>Profile</Text>
+  </TouchableOpacity>
+  </View>
+  </View>
   );
-};
+  };
 /*................................................................................................*/
 const SearchPage = ({ navigation }) => {
   const categories = [
@@ -540,7 +553,7 @@ const SearchPageMarket = ({ navigation }) => {
 const SearchPageEmergency = ({ navigation }) => {
   const categories = [
     { name: 'AUC clinic', image: require('./assets/hospital.png'), targetScreen: 'Emergency1Screen' }, 
-    //{ name: 'Recive Order', image: require('./assets/Order.png'), targetScreen: 'Emergency2Screen' }, 
+    //{ name: 'Recive Order', image: require('./assets/Order.png'), targetScreen: 'ReceiveOrderScreen' }, 
     // { name: 'Soudi', image: require('./assets/grocery.png'), targetScreen: 'GroceryScreen' }, 
    // { name: 'Equipments', image: require('./assets/tools.png'), targetScreen: 'Emergency3Screen' }, 
   ];
@@ -594,7 +607,7 @@ const SearchPageEmergency = ({ navigation }) => {
 const Coffee1Screen = ({ navigation }) => {
   const categories = [
     { name: 'Latte', targetScreen: 'OrderPage' },
-    { name: 'Ice Coffee',  targetScreen: 'OrderPage' },
+    { name: 'Ice Coffee', targetScreen: 'OrderPage' },
     { name: 'Turkey', targetScreen: 'OrderPage' },
     { name: 'Cookies', targetScreen: 'OrderPage' },
     { name: 'Mafins', targetScreen: 'OrderPage' },
@@ -602,12 +615,12 @@ const Coffee1Screen = ({ navigation }) => {
     { name: 'Juices', targetScreen: 'OrderPage' },
   ];
 
-  const [closestCourier, setClosestCourier] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(''); // State for selected category
+
   const handleCategoryPress = (category) => {
-  const closest = findClosestCourier(couriers);
-  setClosestCourier(closest);
-  navigation.navigate(category.targetScreen);
-};
+    navigation.navigate(category.targetScreen, { selectedCategory: category.name });
+    setSelectedCategory(category.name);
+  };
 
   return (
     <View style={style4.container}>
@@ -617,7 +630,8 @@ const Coffee1Screen = ({ navigation }) => {
             <TouchableOpacity
               key={category.name}
               style={style5.categoryBox1}
-              onPress={() => handleCategoryPress(category)}>
+              onPress={() => handleCategoryPress(category)}
+            >
               <Image source={category.image} style={style5.categoryImage} />
               <Text style={style5.categoryName}>{category.name}</Text>
             </TouchableOpacity>
@@ -625,21 +639,16 @@ const Coffee1Screen = ({ navigation }) => {
           </View>
         ))}
       </View>
+
       {/* Add the following View to incorporate the bottom tab buttons */}
       <View style={style6.tabBarContainer}>
-        <TouchableOpacity 
-        style={style6.tabBarButton}
-        onPress={() => navigation.navigate('HomePage')}>
+        <TouchableOpacity style={style6.tabBarButton} onPress={() => navigation.navigate('HomePage')}>
           <Text style={[style6.tabBarButtonText, { color: '#25DEF7' }]}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-        style={style6.tabBarButton}
-        onPress={() => navigation.navigate('SearchPage')}>
+        <TouchableOpacity style={style6.tabBarButton} onPress={() => navigation.navigate('SearchPage')}>
           <Text style={[style6.tabBarButtonText, { color: '#FFFFFF' }]}>Search</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-        style={style6.tabBarButton}
-        onPress={() => navigation.navigate('ProfilePage')}>
+        <TouchableOpacity style={style6.tabBarButton} onPress={() => navigation.navigate('ProfilePage')}>
           <Text style={[style6.tabBarButtonText, { color: '#FFFFFF' }]}>Profile</Text>
         </TouchableOpacity>
       </View>
@@ -657,21 +666,27 @@ const Coffee2Screen = ({ navigation }) => {
     { name: 'Water', targetScreen: 'OrderPage' },
     { name: 'Juices', targetScreen: 'OrderPage' },
   ];
+  const handleCategoryPress = (category) => {
+    navigation.navigate(category.targetScreen, { selectedCategory: category.name });
+  };
+
   return (
     <View style={style4.container}>
       <View style={style5.categories}>
-        {categories.map((category, index) => (
-          <View key={category.name} style={style5.categoryContainer}>
-            <TouchableOpacity
-              style={style5.categoryBox1}
-              onPress={() => navigation.navigate(category.targetScreen)}>
-              <Image source={category.image} style={style5.categoryImage} />
-              <Text style={style5.categoryName}>{category.name}</Text>
-            </TouchableOpacity>
-            <View style={style5.blueBox} />
-          </View>
-        ))}
-      </View>
+      {categories.map((category, index) => (
+        <View key={category.name} style={style5.categoryContainer}>
+          <TouchableOpacity
+            key={category.name}
+            style={style5.categoryBox1}
+            onPress={() => handleCategoryPress(category)}
+          >
+            <Image source={category.image} style={style5.categoryImage} />
+            <Text style={style5.categoryName}>{category.name}</Text>
+          </TouchableOpacity>
+          <View style={style5.blueBox} />
+        </View>
+      ))}
+    </View>
       {/* Add the following View to incorporate the bottom tab buttons */}
       <View style={style6.tabBarContainer}>
         <TouchableOpacity 
@@ -704,21 +719,27 @@ const Coffee3Screen = ({ navigation }) => {
     { name: 'Water', targetScreen: 'OrderPage' },
     { name: 'Juices', targetScreen: 'OrderPage' },
   ];
+  const handleCategoryPress = (category) => {
+    navigation.navigate(category.targetScreen, { selectedCategory: category.name });
+  };
+
   return (
     <View style={style4.container}>
       <View style={style5.categories}>
-        {categories.map((category, index) => (
-          <View key={category.name} style={style5.categoryContainer}>
-            <TouchableOpacity
-              style={style5.categoryBox1}
-              onPress={() => navigation.navigate(category.targetScreen)}>
-              <Image source={category.image} style={style5.categoryImage} />
-              <Text style={style5.categoryName}>{category.name}</Text>
-            </TouchableOpacity>
-            <View style={style5.blueBox} />
-          </View>
-        ))}
-      </View>
+      {categories.map((category, index) => (
+        <View key={category.name} style={style5.categoryContainer}>
+          <TouchableOpacity
+            key={category.name}
+            style={style5.categoryBox1}
+            onPress={() => handleCategoryPress(category)}
+          >
+            <Image source={category.image} style={style5.categoryImage} />
+            <Text style={style5.categoryName}>{category.name}</Text>
+          </TouchableOpacity>
+          <View style={style5.blueBox} />
+        </View>
+      ))}
+    </View>
       {/* Add the following View to incorporate the bottom tab buttons */}
       <View style={style6.tabBarContainer}>
         <TouchableOpacity 
@@ -751,21 +772,27 @@ const BooksScreen = ({ navigation }) => {
     { name: 'Themal mugs', targetScreen: 'OrderPage' },
     { name: 'Files', targetScreen: 'OrderPage' },
   ];
+  const handleCategoryPress = (category) => {
+    navigation.navigate(category.targetScreen, { selectedCategory: category.name });
+  };
+
   return (
     <View style={style4.container}>
       <View style={style5.categories}>
-        {categories.map((category, index) => (
-          <View key={category.name} style={style5.categoryContainer}>
-            <TouchableOpacity
-              style={style5.categoryBox1}
-              onPress={() => navigation.navigate(category.targetScreen)}>
-              <Image source={category.image} style={style5.categoryImage} />
-              <Text style={style5.categoryName}>{category.name}</Text>
-            </TouchableOpacity>
-            <View style={style5.blueBox} />
-          </View>
-        ))}
-      </View>
+      {categories.map((category, index) => (
+        <View key={category.name} style={style5.categoryContainer}>
+          <TouchableOpacity
+            key={category.name}
+            style={style5.categoryBox1}
+            onPress={() => handleCategoryPress(category)}
+          >
+            <Image source={category.image} style={style5.categoryImage} />
+            <Text style={style5.categoryName}>{category.name}</Text>
+          </TouchableOpacity>
+          <View style={style5.blueBox} />
+        </View>
+      ))}
+    </View>
       {/* Add the following View to incorporate the bottom tab buttons */}
       <View style={style6.tabBarContainer}>
         <TouchableOpacity 
@@ -797,21 +824,27 @@ const Grocery1Screen = ({ navigation }) => {
     { name: 'Chocolates', targetScreen: 'OrderPage' },
     { name: 'Gums', targetScreen: 'OrderPage' },
   ];
+  const handleCategoryPress = (category) => {
+    navigation.navigate(category.targetScreen, { selectedCategory: category.name });
+  };
+
   return (
     <View style={style4.container}>
       <View style={style5.categories}>
-        {categories.map((category, index) => (
-          <View key={category.name} style={style5.categoryContainer}>
-            <TouchableOpacity
-              style={style5.categoryBox1}
-              onPress={() => navigation.navigate(category.targetScreen)}>
-              <Image source={category.image} style={style5.categoryImage} />
-              <Text style={style5.categoryName}>{category.name}</Text>
-            </TouchableOpacity>
-            <View style={style5.blueBox} />
-          </View>
-        ))}
-      </View>
+      {categories.map((category, index) => (
+        <View key={category.name} style={style5.categoryContainer}>
+          <TouchableOpacity
+            key={category.name}
+            style={style5.categoryBox1}
+            onPress={() => handleCategoryPress(category)}
+          >
+            <Image source={category.image} style={style5.categoryImage} />
+            <Text style={style5.categoryName}>{category.name}</Text>
+          </TouchableOpacity>
+          <View style={style5.blueBox} />
+        </View>
+      ))}
+    </View>
       {/* Add the following View to incorporate the bottom tab buttons */}
       <View style={style6.tabBarContainer}>
         <TouchableOpacity 
@@ -843,21 +876,27 @@ const Grocery2Screen = ({ navigation }) => {
     { name: 'Chocolates', targetScreen: 'OrderPage' },
     { name: 'Gums', targetScreen: 'OrderPage' },
   ];
+  const handleCategoryPress = (category) => {
+    navigation.navigate(category.targetScreen, { selectedCategory: category.name });
+  };
+
   return (
     <View style={style4.container}>
       <View style={style5.categories}>
-        {categories.map((category, index) => (
-          <View key={category.name} style={style5.categoryContainer}>
-            <TouchableOpacity
-              style={style5.categoryBox1}
-              onPress={() => navigation.navigate(category.targetScreen)}>
-              <Image source={category.image} style={style5.categoryImage} />
-              <Text style={style5.categoryName}>{category.name}</Text>
-            </TouchableOpacity>
-            <View style={style5.blueBox} />
-          </View>
-        ))}
-      </View>
+      {categories.map((category, index) => (
+        <View key={category.name} style={style5.categoryContainer}>
+          <TouchableOpacity
+            key={category.name}
+            style={style5.categoryBox1}
+            onPress={() => handleCategoryPress(category)}
+          >
+            <Image source={category.image} style={style5.categoryImage} />
+            <Text style={style5.categoryName}>{category.name}</Text>
+          </TouchableOpacity>
+          <View style={style5.blueBox} />
+        </View>
+      ))}
+    </View>
       {/* Add the following View to incorporate the bottom tab buttons */}
       <View style={style6.tabBarContainer}>
         <TouchableOpacity 
@@ -890,21 +929,27 @@ const Restaurant1Screen = ({ navigation }) => {
     { name: 'French Fries', targetScreen: 'OrderPage' },
     { name: 'Breakfast', targetScreen: 'OrderPage' },
   ];
+  const handleCategoryPress = (category) => {
+    navigation.navigate(category.targetScreen, { selectedCategory: category.name });
+  };
+
   return (
     <View style={style4.container}>
       <View style={style5.categories}>
-        {categories.map((category, index) => (
-          <View key={category.name} style={style5.categoryContainer}>
-            <TouchableOpacity
-              style={style5.categoryBox1}
-              onPress={() => navigation.navigate(category.targetScreen)}>
-              <Image source={category.image} style={style5.categoryImage} />
-              <Text style={style5.categoryName}>{category.name}</Text>
-            </TouchableOpacity>
-            <View style={style5.blueBox} />
-          </View>
-        ))}
-      </View>
+      {categories.map((category, index) => (
+        <View key={category.name} style={style5.categoryContainer}>
+          <TouchableOpacity
+            key={category.name}
+            style={style5.categoryBox1}
+            onPress={() => handleCategoryPress(category)}
+          >
+            <Image source={category.image} style={style5.categoryImage} />
+            <Text style={style5.categoryName}>{category.name}</Text>
+          </TouchableOpacity>
+          <View style={style5.blueBox} />
+        </View>
+      ))}
+    </View>
       {/* Add the following View to incorporate the bottom tab buttons */}
       <View style={style6.tabBarContainer}>
         <TouchableOpacity 
@@ -937,21 +982,27 @@ const Restaurant2Screen = ({ navigation }) => {
     { name: 'French Fries', targetScreen: 'OrderPage' },
     { name: 'Breakfast', targetScreen: 'OrderPage' },
   ];
+  const handleCategoryPress = (category) => {
+    navigation.navigate(category.targetScreen, { selectedCategory: category.name });
+  };
+
   return (
     <View style={style4.container}>
       <View style={style5.categories}>
-        {categories.map((category, index) => (
-          <View key={category.name} style={style5.categoryContainer}>
-            <TouchableOpacity
-              style={style5.categoryBox1}
-              onPress={() => navigation.navigate(category.targetScreen)}>
-              <Image source={category.image} style={style5.categoryImage} />
-              <Text style={style5.categoryName}>{category.name}</Text>
-            </TouchableOpacity>
-            <View style={style5.blueBox} />
-          </View>
-        ))}
-      </View>
+      {categories.map((category, index) => (
+        <View key={category.name} style={style5.categoryContainer}>
+          <TouchableOpacity
+            key={category.name}
+            style={style5.categoryBox1}
+            onPress={() => handleCategoryPress(category)}
+          >
+            <Image source={category.image} style={style5.categoryImage} />
+            <Text style={style5.categoryName}>{category.name}</Text>
+          </TouchableOpacity>
+          <View style={style5.blueBox} />
+        </View>
+      ))}
+    </View>
       {/* Add the following View to incorporate the bottom tab buttons */}
       <View style={style6.tabBarContainer}>
         <TouchableOpacity 
@@ -984,21 +1035,27 @@ const Restaurant3Screen = ({ navigation }) => {
     { name: 'French Fries', targetScreen: 'OrderPage' },
     { name: 'Breakfast', targetScreen: 'OrderPage' },
   ];
+  const handleCategoryPress = (category) => {
+    navigation.navigate(category.targetScreen, { selectedCategory: category.name });
+  };
+
   return (
     <View style={style4.container}>
       <View style={style5.categories}>
-        {categories.map((category, index) => (
-          <View key={category.name} style={style5.categoryContainer}>
-            <TouchableOpacity
-              style={style5.categoryBox1}
-              onPress={() => navigation.navigate(category.targetScreen)}>
-              <Image source={category.image} style={style5.categoryImage} />
-              <Text style={style5.categoryName}>{category.name}</Text>
-            </TouchableOpacity>
-            <View style={style5.blueBox} />
-          </View>
-        ))}
-      </View>
+      {categories.map((category, index) => (
+        <View key={category.name} style={style5.categoryContainer}>
+          <TouchableOpacity
+            key={category.name}
+            style={style5.categoryBox1}
+            onPress={() => handleCategoryPress(category)}
+          >
+            <Image source={category.image} style={style5.categoryImage} />
+            <Text style={style5.categoryName}>{category.name}</Text>
+          </TouchableOpacity>
+          <View style={style5.blueBox} />
+        </View>
+      ))}
+    </View>
       {/* Add the following View to incorporate the bottom tab buttons */}
       <View style={style6.tabBarContainer}>
         <TouchableOpacity 
@@ -1031,21 +1088,27 @@ const Restaurant4Screen = ({ navigation }) => {
     { name: 'French Fries', targetScreen: 'OrderPage' },
     { name: 'Breakfast', targetScreen: 'OrderPage' },
   ];
+  const handleCategoryPress = (category) => {
+    navigation.navigate(category.targetScreen, { selectedCategory: category.name });
+  };
+
   return (
     <View style={style4.container}>
       <View style={style5.categories}>
-        {categories.map((category, index) => (
-          <View key={category.name} style={style5.categoryContainer}>
-            <TouchableOpacity
-              style={style5.categoryBox1}
-              onPress={() => navigation.navigate(category.targetScreen)}>
-              <Image source={category.image} style={style5.categoryImage} />
-              <Text style={style5.categoryName}>{category.name}</Text>
-            </TouchableOpacity>
-            <View style={style5.blueBox} />
-          </View>
-        ))}
-      </View>
+      {categories.map((category, index) => (
+        <View key={category.name} style={style5.categoryContainer}>
+          <TouchableOpacity
+            key={category.name}
+            style={style5.categoryBox1}
+            onPress={() => handleCategoryPress(category)}
+          >
+            <Image source={category.image} style={style5.categoryImage} />
+            <Text style={style5.categoryName}>{category.name}</Text>
+          </TouchableOpacity>
+          <View style={style5.blueBox} />
+        </View>
+      ))}
+    </View>
       {/* Add the following View to incorporate the bottom tab buttons */}
       <View style={style6.tabBarContainer}>
         <TouchableOpacity 
@@ -1080,17 +1143,24 @@ const Emergency1Screen = ({ navigation }) => {
   );
 };
 /*................................................................................................*/
-const Emergency2Screen = ({ navigation }) => {
+const ReceiveOrderScreen = ({ navigation }) => {
+  const [message, setMessage] = useState(''); // State to store user input
+
+  const handleOrder = () => {
+    navigation.navigate('OrderPage', { message }); // Pass message
+  };
+
   return (
     <View style={style10.emergencyScreenContainer}>
-      <Text style={style10.emergencyTitle}>Recive Order</Text>
+      <Text style={style10.emergencyTitle}>Receive Order</Text>
       <View style={style10.messageContainer}>
         <TextInput
           multiline={true}
           style={style10.messageInput}
           placeholder="Enter your message..."
+          onChangeText={setMessage} // Update state on text change
         />
-        <TouchableOpacity style={style10.orderButton}>
+        <TouchableOpacity style={style10.orderButton} onPress={handleOrder}>
           <Text style={style10.orderButtonText}>Order</Text>
         </TouchableOpacity>
       </View>
@@ -1099,6 +1169,11 @@ const Emergency2Screen = ({ navigation }) => {
 };
 /*................................................................................................*/
 const CustomScreen = ({ navigation }) => {
+  const [message, setMessage] = useState(''); // State to store user input
+
+  const handleOrder = () => {
+    navigation.navigate('OrderPage', { message }); // Pass message
+  };
   return (
     <View style={style10.emergencyScreenContainer}>
       <Text style={style10.emergencyTitle}>Custom Your Order</Text>
@@ -1107,8 +1182,9 @@ const CustomScreen = ({ navigation }) => {
           multiline={true}
           style={style10.messageInput}
           placeholder="Enter your message..."
+          onChangeText={setMessage} // Update state on text change
         />
-        <TouchableOpacity style={style10.orderButton}>
+        <TouchableOpacity style={style10.orderButton} onPress={handleOrder}>
           <Text style={style10.orderButtonText}>Order</Text>
         </TouchableOpacity>
       </View>
@@ -1234,7 +1310,7 @@ const ApplicationForCourier = ({ navigation }) => {
       setphone_Number('');
       setAddress('');
       setEmail('');
-    navigation.navigate('CourierPage');
+    navigation.navigate('Courierpage');
   };
 
   return (
@@ -1328,48 +1404,60 @@ const CourierLogin = ({ navigation }) => {
 };
 /*................................................................................................*/
 const CourierPage = ({ navigation }) => {
-  const couriers = [
-    { name: 'Ahmed', distance: 1 },
-    { name: 'Ali', distance: 1.5 },
-    { name: 'Salma', distance: 2 },
-  ];
-  
-  const findClosestCourier = (couriers) => {
-    let closestCourier = null;
-    let minDistance = Infinity;
-  
-    for (const courier of couriers) {
-      if (courier.distance < minDistance) {
-        minDistance = courier.distance;
-        closestCourier = courier;
-      }
-    }
-  
-    return closestCourier;
-  };
+  const { selectedCategory, order } = navigation.getState()?.params || {};
+
   return (
     <View style={style4.container}>
-      <TouchableOpacity
-          style={style7.courierBox}
-          onPress={() => {
-            // Handle click on closest courier box (optional)
-          }}>
-          <Text style={style7.courierBoxText}>Closest Courier: {closestCourier.name}</Text>
-        </TouchableOpacity>
+      <Text style={style12.infoText}>This is the nearest courier who is 1 km away from you</Text>
+      <View style={style12.orderDetails}>
+        <Text style={style12.orderHeader}>New Order: </Text>
+        <View style={style12.buttonContainer}>
+          <TouchableOpacity style={style12.acceptButton} onPress={() => navigation.navigate('PaymentPage')}>
+            <Text style={style12.buttonText}>Accept</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={style12.declineButton} onPress={() => navigation.navigate('Courierpage')}>
+            <Text style={style12.buttonText}>Decline</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
       <View style={style6.tabBarContainer}>
         <TouchableOpacity 
         style={style6.tabBarButton}
-        onPress={() => navigation.navigate('CourierPage')}>
-          <Text style={[style6.tabBarButtonText, { color: '#25DEF7' }]}>Home</Text>
+        onPress={() => navigation.navigate('HomePage')}>
+          <Text style={[style6.tabBarButtonText, { color: '#FFFFFF' }]}>Home</Text>
         </TouchableOpacity>
         {/* <TouchableOpacity 
         style={style6.tabBarButton}
         onPress={() => navigation.navigate('SearchPage')}>
-          <Text style={[style6.tabBarButtonText, { color: '#25DEF7' }]}>Search</Text>
+          <Text style={[style6.tabBarButtonText, { color: '#FFFFFF' }]}>Search</Text>
         </TouchableOpacity> */}
         <TouchableOpacity 
         style={style6.tabBarButton}
-        onPress={() => navigation.navigate('CourierProfile')}>
+        onPress={() => navigation.navigate('ProfilePage')}>
+          <Text style={[style6.tabBarButtonText, { color: '#FFFFFF' }]}>Profile</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+/*................................................................................................*/
+const Courierpage = ({ navigation }) => {
+  return (
+    <View style={style4.container}>
+      <View style={style6.tabBarContainer}>
+        <TouchableOpacity 
+        style={style6.tabBarButton}
+        onPress={() => navigation.navigate('HomePage')}>
+          <Text style={[style6.tabBarButtonText, { color: '#FFFFFF' }]}>Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+        style={style6.tabBarButton}
+        onPress={() => navigation.navigate('SearchPage')}>
+          <Text style={[style6.tabBarButtonText, { color: '#FFFFFF' }]}>Search</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+        style={style6.tabBarButton}
+        onPress={() => navigation.navigate('ProfilePage')}>
           <Text style={[style6.tabBarButtonText, { color: '#FFFFFF' }]}>Profile</Text>
         </TouchableOpacity>
       </View>
@@ -1445,6 +1533,56 @@ const CourierProfile = ({ navigation }) => {
           <Text style={[style6.tabBarButtonText, { color: '#25DEF7' }]}>Profile</Text>
         </TouchableOpacity>
       </View>
+    </View>
+  );
+};
+/*................................................................................................*/
+const PaymentPage = ({ navigation }) => {
+  const [amount, setAmount] = useState(''); // State variable for amount
+
+  return (
+    <View style={style4.container}>
+      <Text style={style14.paymentText}>Enter Payment Amount:</Text>
+      <TextInput
+        style={style14.amountInput}
+        keyboardType="numeric" // Set keyboard type to numeric
+        placeholder="Amount (e.g., 10.50)"
+        value={amount}
+        onChangeText={text => setAmount(text)} // Update state on text change
+      />
+      <TouchableOpacity style={style14.payButton} onPress={() => navigation.navigate('FinishPage')}>
+        <Text style={style14.payButtonText}>Pay</Text>
+      </TouchableOpacity>
+      {/* ... your existing PaymentPage content (optional) */}
+      <View style={style6.tabBarContainer}>
+        {/* ... your existing bottom tab buttons */}
+      </View>
+    </View>
+  );
+};
+/*................................................................................................*/
+const FinishPage = ({ navigation }) => {
+  const Images = {
+    congratsImage: require('./assets/correct.png'), // Replace 'congrats.png' with your filename
+  };
+  return (
+    <View style={style4.container}>
+      <View style={style15.contentContainer}>
+        <Image source={Images.congratsImage} style={style15.congratsImage} />
+        <Text style={style15.congratsText}>Congratulations!</Text>
+        <Text style={style15.messageText}>Your order is complete.</Text>
+      </View>
+      {/* <View style={style6.tabBarContainer}>
+        <TouchableOpacity style={style6.tabBarButton} onPress={() => navigation.navigate('HomePage')}>
+          <Text style={[style6.tabBarButtonText, { color: '#FFFFFF' }]}>Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={style6.tabBarButton} onPress={() => navigation.navigate('SearchPage')}>
+          <Text style={[style6.tabBarButtonText, { color: '#FFFFFF' }]}>Search</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={style6.tabBarButton} onPress={() => navigation.navigate('ProfilePage')}>
+          <Text style={[style6.tabBarButtonText, { color: '#FFFFFF' }]}>Profile</Text>
+        </TouchableOpacity>
+      </View> */}
     </View>
   );
 };
@@ -1826,3 +1964,261 @@ const style10 = StyleSheet.create({
   },
 });
 
+const style11 = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+  },
+  categories: {
+    flex: 1,
+    width: '100%',
+    marginTop: 20,
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 10,
+    margin: 5,
+    borderRadius: 5,
+    backgroundColor: '#fff',
+  },
+  categoryBox1: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  categoryImage: {
+    width: 50,
+    height: 50,
+    marginRight: 10,
+  },
+  categoryName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  blueBox: {
+    width: 10,
+    height: 10,
+    backgroundColor: 'blue',
+    borderRadius: 50,
+  },
+  tabBarContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#000',
+    padding: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#ccc',
+  },
+  tabBarButton: {
+    padding: 10,
+  },
+  tabBarButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  orderText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 20,
+  },
+  confirmButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    margin: 10,
+    borderRadius: 5,
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  shiftButton: {
+    backgroundColor: '#003566', // Blue
+    padding: 15,
+    position: 'absolute', // Position at bottom
+    bottom: 70, // Distance from bottom edge
+    alignSelf: 'center', // Center horizontally
+    borderRadius: 5,
+  },
+  shiftButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  orderText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  messageText: {
+    fontSize: 16,
+    marginBottom: 20,
+  },
+
+  confirmButton: {
+    backgroundColor: '#4CAF50', // Green
+    padding: 15,
+    borderRadius: 5,
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+
+  shiftButton: { // Optional, functionality not provided
+    backgroundColor: '#007bff', // Blue
+    padding: 15,
+    position: 'absolute',
+    bottom: 20,
+    alignSelf: 'center',
+    borderRadius: 5,
+  },
+  shiftButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
+  // Styles for CourierPage
+  courierPageContainer: {
+    flex: 1,
+    backgroundColor: '#f0f0f0',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  acceptButton: {
+    backgroundColor: '#4CAF50', // Green
+    padding: 10,
+    borderRadius: 5,
+    flex: 1, // Divide available space equally
+  },
+  declineButton: {
+    backgroundColor: '#f44336', // Red
+    padding: 10,
+    borderRadius: 5,
+    flex: 1, // Divide available space equally
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  acceptButton: {
+    backgroundColor: '#4CAF50', // Green
+    padding: 10,
+    borderRadius: 5,
+    flex: 1, // Divide available space equally
+  },
+  declineButton: {
+    backgroundColor: '#f44336', // Red
+    padding: 10,
+    borderRadius: 5,
+    flex: 1, // Divide available space equally
+  },
+});
+
+const style12 = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#F5F5F5', // Light gray background
+  },
+  infoText: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  orderDetails: {
+    backgroundColor: '#FFFFFF', // White background
+    padding: 15,
+    borderRadius: 5,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2, // Add shadow effect
+  },
+  orderHeader: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 10,
+  },
+  acceptButton: {
+    backgroundColor: '#28A745', // Green
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  declineButton: {
+    backgroundColor: '#FF0000', // Red
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: '#FFFFFF', // White text
+    fontSize: 16,
+  },
+});
+
+const style14 = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#F5F5F5', // Light gray background
+  },
+  paymentText: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  amountInput: {
+    height: 40,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+  },
+  payButton: {
+    backgroundColor: '#28A745', // Green
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  payButtonText: {
+    color: '#FFFFFF', // White text
+    textAlign: 'center',
+    fontSize: 16,
+  },
+});
+
+const style15 = StyleSheet.create({
+  contentContainer: {
+    flex: 1, // Take up most of the screen space
+    justifyContent: 'center', // Align content vertically
+    alignItems: 'center', // Align content horizontally
+  },
+  congratsImage: {
+    width: 100,
+    height: 100,
+    marginBottom: 20,
+  },
+  congratsText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  messageText: {
+    fontSize: 16,
+  },
+});
